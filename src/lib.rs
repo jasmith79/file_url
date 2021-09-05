@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::string::FromUtf8Error;
 
 use lazy_static::lazy_static;
@@ -50,12 +50,34 @@ pub fn encode_file_component(path_part: &str) -> String {
     }
 }
 
-pub trait PathBufUrlExt {
+pub fn file_url_to_pathbuf(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
+    SEPARATOR
+        .split(file_url)
+        .enumerate()
+        .map(|(i, url_piece)| {
+            if i == 0 && url_piece == "file:" {
+                // File url should always be abspath
+                Ok(String::from(FORWARD_SLASH))
+            } else {
+                let dec_str = decode(url_piece);
+                match dec_str {
+                    Ok(decoded) => Ok(decoded.into_owned()),
+                    Err(e) => Err(e),
+                }
+            }
+        })
+        .collect()
+}
+
+pub trait PathFileUrlExt {
     fn to_file_url(&self) -> Result<String, UTFDecodeError>;
+}
+
+pub trait PathFromFileUrlExt {
     fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error>;
 }
 
-impl PathBufUrlExt for PathBuf {
+impl PathFileUrlExt for Path {
     fn to_file_url(&self) -> Result<String, UTFDecodeError> {
         let path_parts: Result<PathBuf, UTFDecodeError> = self
             .components()
@@ -71,30 +93,23 @@ impl PathBufUrlExt for PathBuf {
             Err(e) => Err(e),
         }
     }
+}
 
+impl PathFromFileUrlExt for Path {
     fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
-        SEPARATOR
-            .split(file_url)
-            .enumerate()
-            .map(|(i, url_piece)| {
-                if i == 0 && url_piece == "file:" {
-                    // File url should always be abspath
-                    Ok(String::from(FORWARD_SLASH))
-                } else {
-                    let dec_str = decode(url_piece);
-                    match dec_str {
-                        Ok(decoded) => Ok(decoded.into_owned()),
-                        Err(e) => Err(e),
-                    }
-                }
-            })
-            .collect()
+        file_url_to_pathbuf(file_url)
+    }
+}
+
+impl PathFromFileUrlExt for PathBuf {
+    fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
+        file_url_to_pathbuf(file_url)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::PathBufUrlExt;
+    use super::*;
     use std::path::PathBuf;
 
     #[test]
