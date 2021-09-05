@@ -73,8 +73,9 @@ pub trait PathFileUrlExt {
     fn to_file_url(&self) -> Result<String, UTFDecodeError>;
 }
 
-pub trait PathFromFileUrlExt {
-    fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error>;
+// Generic for now, hope to eventually implement for Path
+pub trait PathFromFileUrlExt<T> {
+    fn from_file_url(file_url: &str) -> Result<T, FromUtf8Error>;
 }
 
 impl PathFileUrlExt for Path {
@@ -95,13 +96,7 @@ impl PathFileUrlExt for Path {
     }
 }
 
-impl PathFromFileUrlExt for Path {
-    fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
-        file_url_to_pathbuf(file_url)
-    }
-}
-
-impl PathFromFileUrlExt for PathBuf {
+impl PathFromFileUrlExt<PathBuf> for PathBuf {
     fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
         file_url_to_pathbuf(file_url)
     }
@@ -148,6 +143,13 @@ mod tests {
     fn oddball_pathbuf_from_url() {
         let one = PathBuf::from_file_url("file:///gi%3E/some%20%26%20what.whtvr").unwrap();
         let two = PathBuf::from("/gi>/some & what.whtvr");
+        assert_eq!(one, two);
+    }
+
+    #[test]
+    fn basic_path_to_url() {
+        let one = Path::new("/foo/bar.txt").to_file_url().unwrap();
+        let two = "file:///foo/bar.txt";
         assert_eq!(one, two);
     }
 }
