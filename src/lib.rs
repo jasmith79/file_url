@@ -13,6 +13,8 @@ lazy_static! {
     static ref SEPARATOR: Regex = Regex::new(r"[/\\]").unwrap();
 }
 
+static FORWARD_SLASH: &str = "/";
+
 #[derive(Debug)]
 pub struct UTFDecodeError {
     details: String,
@@ -59,40 +61,34 @@ impl PathBufUrlExt for PathBuf {
             .components()
             .map(|part| match part.as_os_str().to_str() {
                 Some(part) => Ok(encode_file_component(part)),
-                None       => Err(UTFDecodeError::new("File path not UTF-8 compatible!")),
+                None => Err(UTFDecodeError::new("File path not UTF-8 compatible!")),
             })
             .collect();
 
         match path_parts {
-            // Unwrap shouldn't fail here since everything should be properly encoded.
+            // Unwrap shouldn't fail here since everything should be properly decoded.
             Ok(parts) => Ok(format!("file://{}", parts.to_str().unwrap())),
-            Err(e)    => Err(e),
+            Err(e) => Err(e),
         }
     }
 
     fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
-        let without_prefix = file_url;
-        let res: Result<Vec<String>, FromUtf8Error> = SEPARATOR
-            .split(without_prefix)
+        SEPARATOR
+            .split(file_url)
             .enumerate()
             .map(|(i, url_piece)| {
                 if i == 0 && url_piece == "file:" {
                     // File url should always be abspath
-                    Ok("/".to_owned())
+                    Ok(String::from(FORWARD_SLASH))
                 } else {
-                    let s = decode(url_piece);
-                    match s {
-                        Ok(cow) => Ok(cow.into_owned()),
-                        Err(e)  => Err(e),
+                    let dec_str = decode(url_piece);
+                    match dec_str {
+                        Ok(decoded) => Ok(decoded.into_owned()),
+                        Err(e) => Err(e),
                     }
                 }
             })
-            .collect();
-
-        match res {
-            Ok(parts) => Ok(parts.iter().collect::<PathBuf>()),
-            Err(e)    => Err(e),
-        }
+            .collect()
     }
 }
 
