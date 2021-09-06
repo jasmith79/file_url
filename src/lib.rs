@@ -1,3 +1,10 @@
+//! file_url
+//!
+//! Makes it easier to Path/PathBuf to/from file URLs.
+//!
+//! Author: Jared Adam Smith
+//! license: MIT
+//! © 2021
 use std::error::Error;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -15,6 +22,8 @@ lazy_static! {
 
 static FORWARD_SLASH: &str = "/";
 
+/// Error for file paths that don't decode to
+/// valid UTF-8 strings.
 #[derive(Debug)]
 pub struct UTFDecodeError {
     details: String,
@@ -40,6 +49,20 @@ impl Error for UTFDecodeError {
     }
 }
 
+/// Percent-encodes the path component. Ignores
+/// Microsoft Windows drive letters and separator
+/// characters.
+///
+/// # Example:
+/// ```
+/// use file_url::encode_file_component;
+///
+/// let enc = encode_file_component("some file.txt");
+/// assert_eq!(enc, "some%20file.txt");
+///
+/// let windows_drive = encode_file_component("C:");
+/// assert_eq!(windows_drive, "C:");
+/// ```
 pub fn encode_file_component(path_part: &str) -> String {
     // If it's a separator char or a Windows drive return
     // as-is.
@@ -50,6 +73,22 @@ pub fn encode_file_component(path_part: &str) -> String {
     }
 }
 
+/// Turns a file URL into a PathBuf. Note that because
+/// `std::path::PathBuf` is backed by a `std::ffi::OsString`
+/// the result is platform-dependent, i.e. Microsoft Windows
+/// paths will not be properly processed on Unix-like systems
+/// and vice-versa. Also note that because the bytes of a
+/// valid file path can be non-UTF8 we have to return a
+/// Result in case the string decode fails.
+///
+/// # Examples:
+/// ```
+/// use std::path::PathBuf;
+/// use file_url::file_url_to_pathbuf;
+///
+/// let p_buf = file_url_to_pathbuf("file:///foo/bar%20baz.txt").unwrap();
+/// assert_eq!(p_buf, PathBuf::from("/foo/bar baz.txt"));
+/// ```
 pub fn file_url_to_pathbuf(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
     SEPARATOR
         .split(file_url)
@@ -69,13 +108,18 @@ pub fn file_url_to_pathbuf(file_url: &str) -> Result<PathBuf, FromUtf8Error> {
         .collect()
 }
 
+/// Method for converting std::path::PathBuf and
+/// `std::path::Path` to a file URL.
 pub trait PathFileUrlExt {
+    /// Assuming a PathBuf or Path is valid UTF8, converts
+    /// to a file URL as an owned String.
     fn to_file_url(&self) -> Result<String, UTFDecodeError>;
 }
 
-// Generic for now, hope to eventually implement for Path
-pub trait PathFromFileUrlExt<T> {
-    fn from_file_url(file_url: &str) -> Result<T, FromUtf8Error>;
+/// Method for constructing a `std::path::PathBuf` from a file URL.
+pub trait PathFromFileUrlExt<PathBuf> {
+    /// Constructs a PathBuf from the supplied &str.
+    fn from_file_url(file_url: &str) -> Result<PathBuf, FromUtf8Error>;
 }
 
 impl PathFileUrlExt for Path {
