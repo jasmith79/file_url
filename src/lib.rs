@@ -9,6 +9,7 @@ use std::error::Error;
 use std::fmt;
 use std::path::{Path, PathBuf};
 use std::string::FromUtf8Error;
+use std::borrow::Cow;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -63,13 +64,13 @@ impl Error for UTFDecodeError {
 /// let windows_drive = encode_file_component("C:");
 /// assert_eq!(windows_drive, "C:");
 /// ```
-pub fn encode_file_component(path_part: &str) -> String {
+pub fn encode_file_component(path_part: &str) -> Cow<str> {
     // If it's a separator char or a Windows drive return
     // as-is.
     if SEPARATOR.is_match(path_part) || WINDOWS_DRIVE.is_match(path_part) {
-        path_part.to_owned()
+        Cow::from(path_part)
     } else {
-        encode(path_part).to_string()
+        encode(path_part)
     }
 }
 
@@ -127,7 +128,7 @@ impl PathFileUrlExt for Path {
         let path_parts: Result<PathBuf, UTFDecodeError> = self
             .components()
             .map(|part| match part.as_os_str().to_str() {
-                Some(part) => Ok(encode_file_component(part)),
+                Some(part) => Ok(encode_file_component(part).to_string()),
                 None => Err(UTFDecodeError::new("File path not UTF-8 compatible!")),
             })
             .collect();
