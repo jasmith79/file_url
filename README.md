@@ -1,4 +1,4 @@
 # File URL 
 
-Adds the ability to convert to/from file URLs to `std::path::PathBuf`
+Adds methods for dealing with file URLs to std::path structs in Rust.
 
