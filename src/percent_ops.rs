@@ -82,7 +82,7 @@ mod tests {
             .unwrap()
             .as_os_str()
             .to_owned();
-        
+
         let enc = encode_path_component(first);
         assert_eq!(enc, "%F0%9F%98%80%23%7B%7D%5Esome%20%26%20what.whtvr");
     }
