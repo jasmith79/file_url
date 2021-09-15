@@ -151,4 +151,18 @@ mod tests {
         let two = "file:///foo/bar.txt";
         assert_eq!(one, two);
     }
+
+    #[test]
+    fn unicode_path_to_url() {
+        let one = Path::new("/tmp/😀/#{}^.txt").to_file_url();
+        let two = "file:///tmp/%F0%9F%98%80/%23%7B%7D%5E.txt";
+        assert_eq!(one, two);
+    }
+
+    #[test]
+    fn unicode_url_to_path() {
+        let one = PathBuf::from_file_url("file:///tmp/%F0%9F%98%80/%23%7B%7D%5E.txt");
+        let two = PathBuf::from("/tmp/😀/#{}^.txt");
+        assert_eq!(one, two);
+    }
 }
