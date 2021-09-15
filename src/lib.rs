@@ -6,10 +6,6 @@
 //! license: MIT
 //! © 2021
 use std::ffi::OsString;
-#[cfg(target_family = "unix")]
-use std::os::unix::ffi::OsStringExt;
-#[cfg(target_family = "windows")]
-use std::os::windows::ffi::OsStringExt;
 use std::path::{Path, PathBuf};
 
 use lazy_static::lazy_static;
@@ -48,11 +44,10 @@ pub fn file_url_to_pathbuf(file_url: &str) -> PathBuf {
         .enumerate()
         .map(|(i, url_piece)| {
             if i == 0 && url_piece == "file:" {
-                // File url should always be abspath
+                // File url should always be fully qualified
                 OsString::from(FORWARD_SLASH)
             } else {
-                let decoded = decode_path_component(url_piece).as_os_str();
-                decoded
+                decode_path_component(url_piece).as_os_str()
             }
         })
         .collect()
@@ -83,7 +78,7 @@ impl PathFileUrlExt for Path {
                 if i == 0 && s == FORWARD_SLASH {
                     String::from(FORWARD_SLASH)
                 } else {
-                    encode_path_component(&s.into_vec())
+                    encode_path_component(s)
                 }
             })
             .collect::<PathBuf>();

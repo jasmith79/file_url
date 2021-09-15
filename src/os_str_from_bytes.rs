@@ -1,8 +1,8 @@
 use std::ffi::OsString;
 #[cfg(target_family = "unix")]
-use std::os::unix::ffi::OsStringExt;
+pub use std::os::unix::ffi::OsStringExt;
 #[cfg(target_family = "windows")]
-use std::os::windows::ffi::OsStringExt;
+pub use std::os::windows::ffi::OsStringExt;
 
 pub trait OsStringFromByteArrExt {
     fn from_byte_vec(b: &[u8]) -> OsString;
