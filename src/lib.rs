@@ -60,7 +60,7 @@ pub trait PathFileUrlExt {
 }
 
 /// Method for constructing a `std::path::PathBuf` from a file URL.
-pub trait PathFromFileUrlExt {
+pub trait PathFromFileUrlExt: private::Sealed {
     /// Constructs a PathBuf from the supplied &str.
     fn from_file_url(file_url: &str) -> PathBuf;
 }
@@ -112,6 +112,11 @@ impl PathFromFileUrlExt for PathBuf {
     fn from_file_url(file_url: &str) -> PathBuf {
         file_url_to_pathbuf(file_url)
     }
+}
+
+mod private {
+    pub trait Sealed {}
+    impl Sealed for super::PathBuf {}
 }
 
 #[cfg(test)]

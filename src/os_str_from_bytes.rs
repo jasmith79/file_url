@@ -4,7 +4,7 @@ pub use std::os::unix::ffi::OsStringExt;
 #[cfg(target_family = "windows")]
 pub use std::os::windows::ffi::OsStringExt;
 
-pub trait OsStringFromByteArrExt {
+pub trait OsStringFromByteArrExt: private::Sealed {
     fn from_byte_vec(b: &[u8]) -> OsString;
 }
 
@@ -20,6 +20,11 @@ impl OsStringFromByteArrExt for OsString {
                 .collect::<Vec<u16>>(),
         );
     }
+}
+
+mod private {
+    pub trait Sealed {}
+    impl Sealed for super::OsString {}
 }
 
 #[cfg(test)]
