@@ -14,7 +14,7 @@ pub struct DecodeResult {
 }
 
 impl DecodeResult {
-    pub fn as_os_str(&mut self) -> OsString {
+    pub fn to_os_string(&mut self) -> OsString {
         OsString::from_byte_vec(&self.buff)
     }
 }

@@ -47,7 +47,7 @@ pub fn file_url_to_pathbuf(file_url: &str) -> PathBuf {
                 // File url should always be fully qualified
                 OsString::from(FORWARD_SLASH)
             } else {
-                decode_path_component(url_piece).as_os_str()
+                decode_path_component(url_piece).to_os_string()
             }
         })
         .collect()
