@@ -3,8 +3,11 @@ name = "file_url"
 version = "0.1.0"
 authors = ["Jared Smith <jasmith79@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Utilities and trait extensions for working with file URLs."
+license = "MIT"
+repository = "https://github.com/jasmith79/file_url"
+keywords = ["path", "url"]
+categories = ["encoding", "filesystem"]
 
 [dependencies]
 percent-encoding = "2.1.0"
