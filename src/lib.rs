@@ -26,12 +26,10 @@ static FORWARD_SLASH: &str = "/";
 /// `std::path::PathBuf` is backed by a `std::ffi::OsString`
 /// the result is platform-dependent, i.e. Microsoft Windows
 /// paths will not be properly processed on Unix-like systems
-/// and vice-versa. Also note that because the bytes of a
-/// valid file path can be non-UTF8 we have to return a
-/// Result in case the string decode fails.
+/// and vice-versa.
 ///
-/// # Examples:
-/// ```
+/// # Example:
+/// ```rust
 /// use std::path::PathBuf;
 /// use file_url::file_url_to_pathbuf;
 ///
@@ -62,12 +60,22 @@ pub trait PathFileUrlExt {
 }
 
 /// Method for constructing a `std::path::PathBuf` from a file URL.
-pub trait PathFromFileUrlExt<PathBuf> {
+pub trait PathFromFileUrlExt {
     /// Constructs a PathBuf from the supplied &str.
     fn from_file_url(file_url: &str) -> PathBuf;
 }
 
 impl PathFileUrlExt for Path {
+    /// Method to convert a std::path::Path into a file URL.
+    ///
+    /// # Example:
+    /// ```rust
+    /// use std::path::Path;
+    /// use file_url::PathFileUrlExt;
+    ///
+    /// let p = Path::new("/foo/bar baz.txt");
+    /// assert_eq!(p.to_file_url(), "file:///foo/bar%20baz.txt");
+    /// ```
     fn to_file_url(&self) -> String {
         let p_buff = self
             .components()
@@ -90,7 +98,17 @@ impl PathFileUrlExt for Path {
     }
 }
 
-impl PathFromFileUrlExt<PathBuf> for PathBuf {
+impl PathFromFileUrlExt for PathBuf {
+    /// Creates a std::path::PathBuf from a given file URL.
+    ///
+    /// # Example:
+    /// ```rust
+    /// use std::path::PathBuf;
+    /// use file_url::PathFromFileUrlExt;
+    ///
+    /// let p = PathBuf::from("/foo/bar baz.txt");
+    /// assert_eq!(p, PathBuf::from_file_url("file:///foo/bar%20baz.txt"));
+    /// ```
     fn from_file_url(file_url: &str) -> PathBuf {
         file_url_to_pathbuf(file_url)
     }

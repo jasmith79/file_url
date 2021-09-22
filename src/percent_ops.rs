@@ -14,6 +14,9 @@ pub struct DecodeResult {
 }
 
 impl DecodeResult {
+    /// Converts the percent-decoded result from the
+    /// underlying byte representation to an owned
+    /// std::ffi::OsString.
     pub fn to_os_string(&mut self) -> OsString {
         OsString::from_byte_vec(&self.buff)
     }
@@ -58,11 +61,13 @@ lazy_static! {
     };
 }
 
+/// Percent-encodes a std::ffi::OsString from a std::path::Component.
 pub fn encode_path_component(path_component: OsString) -> String {
     let b = path_component.into_vec();
     percent_encode(&b, &FILE_URL_BYTES.controls).collect()
 }
 
+/// Decodes a percent-encoded &str into a DecodeResult.
 pub fn decode_path_component(encoded_path_compenent: &str) -> DecodeResult {
     let b: Vec<u8> = percent_decode_str(encoded_path_compenent).collect();
     DecodeResult { buff: b }
