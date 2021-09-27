@@ -67,6 +67,12 @@ pub trait PathFromFileUrlExt: private::Sealed {
 
 impl PathFileUrlExt for Path {
     /// Method to convert a std::path::Path into a file URL.
+    /// **NOTE:** on Windows systems the path must be valid
+    /// UTF-8 because std::path::Path is backed by a
+    /// platform-dependent std::ffi::OsString and there are
+    /// difficulties dealing with the byte representation of
+    /// platform string on Windows. Unix-like
+    /// operating systems do not have this restriction.
     ///
     /// # Example:
     /// ```rust

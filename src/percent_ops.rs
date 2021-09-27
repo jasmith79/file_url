@@ -1,8 +1,14 @@
-use crate::os_str_from_bytes::{OsStringExt, OsStringFromByteArrExt};
 use lazy_static::lazy_static;
-use percent_encoding::{percent_decode_str, percent_encode, AsciiSet, CONTROLS};
+#[cfg(target_family = "unix")]
+use percent_encoding::percent_encode;
+#[cfg(target_family = "windows")]
+use percent_encoding::utf8_percent_encode;
+use percent_encoding::{percent_decode_str, AsciiSet, CONTROLS};
 use std::ffi::OsString;
 use std::ops::Deref;
+
+#[cfg(target_family = "unix")]
+use crate::os_str_from_bytes::{OsStringExt, OsStringFromByteArrExt};
 
 pub struct ControlByteWrapper {
     controls: AsciiSet,
@@ -63,8 +69,16 @@ lazy_static! {
 
 /// Percent-encodes a std::ffi::OsString from a std::path::Component.
 pub fn encode_path_component(path_component: OsString) -> String {
-    let b = path_component.into_vec();
-    percent_encode(&b, &FILE_URL_BYTES.controls).collect()
+    #[cfg(target_family = "unix")]
+    {
+        let b = path_component.into_vec();
+        percent_encode(&b, &FILE_URL_BYTES.controls).collect()
+    }
+    #[cfg(target_family = "windows")]
+    {
+        let s = path_component.to_string_lossy();
+        utf8_percent_encode(s, &FILE_URL_BYTES.controls)
+    }
 }
 
 /// Decodes a percent-encoded &str into a DecodeResult.
