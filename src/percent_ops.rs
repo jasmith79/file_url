@@ -5,34 +5,14 @@ use percent_encoding::percent_encode;
 use percent_encoding::utf8_percent_encode;
 use percent_encoding::{percent_decode_str, AsciiSet, CONTROLS};
 use std::ffi::OsString;
-use std::ops::Deref;
 
+#[cfg(target_family = "unix")]
+use crate::os_str_from_bytes::OsStringFromByteArrExt;
 #[cfg(target_family = "unix")]
 use crate::os_str_from_bytes::{OsStringExt, OsStringFromByteArrExt};
 
 pub struct ControlByteWrapper {
     controls: AsciiSet,
-}
-
-#[derive(Debug, Clone)]
-pub struct DecodeResult {
-    buff: Vec<u8>,
-}
-
-impl DecodeResult {
-    /// Converts the percent-decoded result from the
-    /// underlying byte representation to an owned
-    /// std::ffi::OsString.
-    pub fn to_os_string(&mut self) -> OsString {
-        OsString::from_byte_vec(&self.buff)
-    }
-}
-
-impl Deref for DecodeResult {
-    type Target = Vec<u8>;
-    fn deref(&self) -> &Self::Target {
-        &self.buff
-    }
 }
 
 lazy_static! {
@@ -77,14 +57,24 @@ pub fn encode_path_component(path_component: OsString) -> String {
     #[cfg(target_family = "windows")]
     {
         let s = path_component.to_string_lossy();
-        utf8_percent_encode(s, &FILE_URL_BYTES.controls)
+        utf8_percent_encode(&s, &FILE_URL_BYTES.controls).to_string()
     }
 }
 
 /// Decodes a percent-encoded &str into a DecodeResult.
-pub fn decode_path_component(encoded_path_compenent: &str) -> DecodeResult {
-    let b: Vec<u8> = percent_decode_str(encoded_path_compenent).collect();
-    DecodeResult { buff: b }
+pub fn decode_path_component(encoded_path_compenent: &str) -> OsString {
+    #[cfg(target_family = "unix")]
+    {
+        let b: Vec<u8> = percent_decode_str(encoded_path_compenent).collect();
+        OsString::from_byte_vec(b)
+    }
+    #[cfg(target_family = "windows")]
+    {
+        let x = percent_decode_str(encoded_path_compenent)
+            .decode_utf8_lossy()
+            .into_owned();
+        OsString::from(x)
+    }
 }
 
 #[cfg(test)]
@@ -107,6 +97,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_family = "unix")]
     fn decode_test() {
         let b = "😀#{}^some & what.whtvr".as_bytes().to_vec();
         let dec = decode_path_component("%F0%9F%98%80%23%7B%7D%5Esome%20%26%20what.whtvr");

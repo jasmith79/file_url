@@ -5,12 +5,12 @@
 //! Author: Jared Adam Smith
 //! license: MIT
 //! © 2021
-use std::ffi::OsString;
-use std::path::{Path, PathBuf};
-
-use lazy_static::lazy_static;
+use lazy_static::{__Deref, lazy_static};
 use regex::Regex;
+use std::ffi::OsString;
+use std::path::{Component, Path, PathBuf};
 
+#[cfg(target_family = "unix")]
 mod os_str_from_bytes;
 mod percent_ops;
 
@@ -45,7 +45,7 @@ pub fn file_url_to_pathbuf(file_url: &str) -> PathBuf {
                 // File url should always be fully qualified
                 OsString::from(FORWARD_SLASH)
             } else {
-                decode_path_component(url_piece).to_os_string()
+                decode_path_component(url_piece)
             }
         })
         .collect()
@@ -71,8 +71,10 @@ impl PathFileUrlExt for Path {
     /// UTF-8 because std::path::Path is backed by a
     /// platform-dependent std::ffi::OsString and there are
     /// difficulties dealing with the byte representation of
-    /// platform string on Windows. Unix-like
-    /// operating systems do not have this restriction.
+    /// platform string on Windows. If the path is not valid
+    /// UTF-8 then any erroneous bytes will be replaced with
+    /// �. Unix-like operating systems do not have this
+    /// restriction.
     ///
     /// # Example:
     /// ```rust
@@ -83,24 +85,47 @@ impl PathFileUrlExt for Path {
     /// assert_eq!(p.to_file_url(), "file:///foo/bar%20baz.txt");
     /// ```
     fn to_file_url(&self) -> String {
-        let p_buff = self
-            .components()
-            .into_iter()
-            .enumerate()
-            .map(|(i, component)| {
-                let s: OsString = component.as_os_str().to_owned();
-                if i == 0 && s == FORWARD_SLASH {
-                    String::from(FORWARD_SLASH)
-                } else {
-                    encode_path_component(s)
-                }
-            })
-            .collect::<PathBuf>();
+        #[cfg(target_family = "windows")]
+        let (p, cmp): (Vec<Component>, Vec<Component>) =
+            self.components()
+                .into_iter()
+                .partition(|component| match component {
+                    Component::Prefix(_) => true,
+                    _ => false,
+                });
 
-        // The unwrap is safe here, we constructed the PathBuf from Strings.
-        let x = p_buff.to_str().unwrap();
-        println!("{}", x);
-        format!("file://{}", x)
+        #[cfg(target_family = "windows")]
+        let pref = p.first();
+        #[cfg(target_family = "windows")]
+        let component_iter = cmp.iter();
+
+        #[cfg(target_family = "unix")]
+        let component_iter = self.components().into_iter();
+        #[cfg(target_family = "unix")]
+        let pref = Option::None;
+
+        let cs;
+        if self.has_root() {
+            cs = component_iter.skip(1);
+        } else {
+            cs = component_iter.skip(0);
+        }
+
+        let encoded = cs
+            .map(|component| match component {
+                Component::CurDir | Component::ParentDir => {
+                    component.as_os_str().to_string_lossy().to_string()
+                }
+                Component::Normal(s) => encode_path_component(s.deref().to_owned()),
+                _ => panic!("Unexpected path component."),
+            })
+            .collect::<Vec<_>>()
+            .join("/");
+
+        match pref {
+            None => format!("file:///{}", encoded),
+            Some(p) => format!("file:///{}/{}", p.as_os_str().to_string_lossy(), encoded),
+        }
     }
 }
 

@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-#[cfg(target_family = "unix")]
 pub use std::os::unix::ffi::OsStringExt;
 
 pub trait OsStringFromByteArrExt: private::Sealed {
@@ -8,7 +7,6 @@ pub trait OsStringFromByteArrExt: private::Sealed {
 
 impl OsStringFromByteArrExt for OsString {
     fn from_byte_vec(b: &[u8]) -> OsString {
-        #[cfg(target_family = "unix")]
         return OsString::from_vec(b.to_vec());
     }
 }
