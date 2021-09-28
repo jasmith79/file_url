@@ -171,15 +171,6 @@ mod tests {
         assert_eq!(s, "file:///gi%3E/some%20%26%20what.whtvr");
     }
 
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn windows_pathbuf_to_url() {
-        let p = PathBuf::from(r"c:\WINDOWS\clock.avi");
-        let url = p.to_file_url();
-        let s = url.as_str();
-        assert_eq!(s, "file:///c:/WINDOWS/clock.avi");
-    }
-
     #[test]
     fn basic_pathbuf_from_url() {
         let one = PathBuf::from("/some/file.txt");
@@ -213,5 +204,17 @@ mod tests {
         let one = PathBuf::from_file_url("file:///tmp/%F0%9F%98%80/%23%7B%7D%5E.txt");
         let two = PathBuf::from("/tmp/😀/#{}^.txt");
         assert_eq!(one, two);
+    }
+}
+
+#[cfg(target_os = "windows")]
+#[cfg(test)]
+mod windows_tests {
+    #[test]
+    fn windows_pathbuf_to_url() {
+        let p = PathBuf::from(r"c:\WINDOWS\clock.avi");
+        let url = p.to_file_url();
+        let s = url.as_str();
+        assert_eq!(s, "file:///c:/WINDOWS/clock.avi");
     }
 }
