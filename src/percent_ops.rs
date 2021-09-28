@@ -7,8 +7,6 @@ use percent_encoding::{percent_decode_str, AsciiSet, CONTROLS};
 use std::ffi::OsString;
 
 #[cfg(target_family = "unix")]
-use crate::os_str_from_bytes::OsStringFromByteArrExt;
-#[cfg(target_family = "unix")]
 use crate::os_str_from_bytes::{OsStringExt, OsStringFromByteArrExt};
 
 pub struct ControlByteWrapper {
@@ -66,7 +64,7 @@ pub fn decode_path_component(encoded_path_compenent: &str) -> OsString {
     #[cfg(target_family = "unix")]
     {
         let b: Vec<u8> = percent_decode_str(encoded_path_compenent).collect();
-        OsString::from_byte_vec(b)
+        OsString::from_byte_vec(&b)
     }
     #[cfg(target_family = "windows")]
     {
@@ -99,8 +97,8 @@ mod tests {
     #[test]
     #[cfg(target_family = "unix")]
     fn decode_test() {
-        let b = "😀#{}^some & what.whtvr".as_bytes().to_vec();
+        let b = OsString::from_byte_vec(&"😀#{}^some & what.whtvr".as_bytes().to_vec());
         let dec = decode_path_component("%F0%9F%98%80%23%7B%7D%5Esome%20%26%20what.whtvr");
-        assert_eq!(b, *dec);
+        assert_eq!(b, dec);
     }
 }

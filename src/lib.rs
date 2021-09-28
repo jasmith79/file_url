@@ -102,7 +102,7 @@ impl PathFileUrlExt for Path {
         #[cfg(target_family = "unix")]
         let component_iter = self.components().into_iter();
         #[cfg(target_family = "unix")]
-        let pref = Option::None;
+        let pref: Option<Component> = Option::None;
 
         let cs;
         if self.has_root() {
