@@ -210,6 +210,9 @@ mod tests {
 #[cfg(target_os = "windows")]
 #[cfg(test)]
 mod windows_tests {
+    use super::*;
+    use std::path::PathBuf;
+
     #[test]
     fn windows_pathbuf_to_url() {
         let p = PathBuf::from(r"c:\WINDOWS\clock.avi");
